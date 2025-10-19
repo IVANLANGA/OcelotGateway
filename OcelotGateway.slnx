@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="OcelotGateway/OcelotGateway.csproj" />
+  <Project Path="OrdersApi/OrdersApi.csproj" />
+  <Project Path="UsersApi/UsersApi.csproj" />
+</Solution>
