@@ -1,13 +1,16 @@
 ﻿using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.Provider.Polly;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
-builder.Services.AddOcelot();
+
+// Register Ocelot and enable the Polly provider for QoS
+builder.Services.AddOcelot().AddPolly();
 
 var app = builder.Build();
-
 
 
 app.Use(async (ctx, next) =>
@@ -42,6 +45,25 @@ app.Use(async (ctx, next) =>
 
     await next();
 });
+
+app.Use(async (ctx, next) =>
+{
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    await next();
+    sw.Stop();
+    Console.WriteLine($"[{DateTime.Now:HH:mm:ss}] {ctx.Request.Method} {ctx.Request.Path} → {ctx.Response.StatusCode} in {sw.ElapsedMilliseconds}ms");
+});
+
+// ----------------------
+// Simple Service Registry Demo
+// ----------------------
+var services = new[]
+{
+    new { Name = "UsersApi", Url = "https://localhost:7140", Health = "Healthy" },
+    new { Name = "OrdersApi", Url = "http://localhost:5201", Health = "Healthy" }
+};
+
+app.MapGet("/registry", () => Results.Ok(services));
 
 
 await app.UseOcelot();

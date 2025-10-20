@@ -1,6 +1,8 @@
 {
   "Routes": [
     {
+      "UpstreamPathTemplate": "/users",
+      "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/api/users",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
@@ -9,10 +11,24 @@
           "Port": 7140
         }
       ],
-      "UpstreamPathTemplate": "/users",
-      "UpstreamHttpMethod": [ "GET" ]
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "Limit": 100
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5,
+        "TimeoutValue": 3000
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 30,
+        "Region": "users"
+      }
     },
     {
+      "UpstreamPathTemplate": "/users/{id}",
+      "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/api/users/{id}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
@@ -21,10 +37,25 @@
           "Port": 7140
         }
       ],
-      "UpstreamPathTemplate": "/users/{id}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "Limit": 100
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5,
+        "TimeoutValue": 3000
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 30,
+        "Region": "users"
+      }
     },
+
     {
+      "UpstreamPathTemplate": "/orders",
+      "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/api/orders",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -33,10 +64,24 @@
           "Port": 5201
         }
       ],
-      "UpstreamPathTemplate": "/orders",
-      "UpstreamHttpMethod": [ "GET" ]
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "Limit": 100
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5,
+        "TimeoutValue": 3000
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 30,
+        "Region": "orders"
+      }
     },
     {
+      "UpstreamPathTemplate": "/orders/{id}",
+      "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/api/orders/{id}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -45,10 +90,24 @@
           "Port": 5201
         }
       ],
-      "UpstreamPathTemplate": "/orders/{id}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "Limit": 100
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5,
+        "TimeoutValue": 3000
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 30,
+        "Region": "orders"
+      }
     },
     {
+      "UpstreamPathTemplate": "/orders/by-user/{userId}",
+      "UpstreamHttpMethod": [ "GET" ],
       "DownstreamPathTemplate": "/api/orders/user/{userId}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -57,9 +116,28 @@
           "Port": 5201
         }
       ],
-      "UpstreamPathTemplate": "/orders/by-user/{userId}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "RateLimitOptions": {
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "Limit": 100
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5,
+        "TimeoutValue": 3000
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 30,
+        "Region": "orders"
+      }
     }
   ],
-  "GlobalConfiguration": { "BaseUrl": "http://localhost:5000" }
+  "GlobalConfiguration": {
+    "BaseUrl": "http://localhost:5000",
+    "RateLimitOptions": {
+      "DisableRateLimitHeaders": false,
+      "QuotaExceededMessage": "Too many requests — try again shortly.",
+      "HttpStatusCode": 429
+    }
+  }
 }
