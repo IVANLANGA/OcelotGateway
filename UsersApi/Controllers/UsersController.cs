@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Neo4j.Driver;
 
 namespace UsersApi.Controllers;
 
@@ -6,21 +7,40 @@ namespace UsersApi.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private static readonly object[] Data =
-    {
-        new { Id = 1, Name = "Alice" },
-        new { Id = 2, Name = "Bob" }
-    };
+    private readonly IDriver _driver;
+    public UsersController(IDriver driver) => _driver = driver;
 
-    // GET /api/users
     [HttpGet]
-    public IActionResult GetAll() => Ok(Data);
-
-    // GET /api/users/1
-    [HttpGet("{id:int}")]
-    public IActionResult GetById(int id)
+    public async Task<IActionResult> GetAll()
     {
-        var user = Data.Cast<dynamic>().FirstOrDefault(u => (int)u.Id == id);
-        return user is null ? NotFound() : Ok(user);
+        await using var session = _driver.AsyncSession();
+        var list = await session.ExecuteReadAsync(async tx =>
+        {
+            var cursor = await tx.RunAsync(@"
+                MATCH (u:User)
+                RETURN u { .id, .name } AS user
+                ORDER BY u.id ASC
+            ");
+            return await cursor.ToListAsync(r => r["user"]);
+        });
+        return Ok(list);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        await using var session = _driver.AsyncSession();
+        var result = await session.ExecuteReadAsync(async tx =>
+        {
+            var cursor = await tx.RunAsync(@"
+                MATCH (u:User {id: $id})
+                RETURN u { .id, .name } AS user
+            ", new { id });
+
+            var list = await cursor.ToListAsync(r => r["user"]);
+            return list.FirstOrDefault();
+        });
+
+        return result is null ? NotFound() : Ok(result);
     }
 }
