@@ -1,40 +1,52 @@
-using Neo4j.Driver;
+using Microsoft.EntityFrameworkCore;
+using OrdersApi.Data;
+using OrdersApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
+// --- Add services ---
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var neo4jCfg = builder.Configuration.GetSection("Neo4j");
-builder.Services.AddSingleton<IDriver>(_ =>
-    GraphDatabase.Driver(
-        neo4jCfg["Uri"],
-        AuthTokens.Basic(neo4jCfg["Username"], neo4jCfg["Password"])
-    )
-);
+// --- Configure SQLite Database (database-per-service pattern) ---
+builder.Services.AddDbContext<AppDbContext>(opt =>
+    opt.UseSqlite("Data Source=orders.db"));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// --- Seed data (demo) ---
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated(); // create DB file if not exists
+
+    if (!db.Orders.Any())
+    {
+        db.Orders.AddRange(
+            new Order { Id = 101, Item = "Keyboard", Total = 899, UserId = 1 },
+            new Order { Id = 102, Item = "Mouse", Total = 399, UserId = 2 }
+        );
+        db.SaveChanges();
+        Console.WriteLine("[Seed] SQLite orders.db seeded successfully.");
+    }
+}
+
+// --- Middleware ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Optional: disable if Ocelot uses HTTP
+// app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+// --- Endpoints ---
 app.MapControllers();
 app.MapGet("/", () => Results.Ok(new { service = "OrdersApi", status = "ok" }));
 app.MapGet("/healthz", () => Results.Ok(new { status = "ok" }));
-// For local dev you can disable the redirect if it confuses testing:
-// app.UseHttpsRedirection();
-
 
 app.Run();
