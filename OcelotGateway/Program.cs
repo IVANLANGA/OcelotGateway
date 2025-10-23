@@ -27,24 +27,32 @@ app.MapGet("/", () => Results.Ok(new { service = "Ocelot Gateway", status = "ok"
 var securityEnabled = builder.Configuration.GetValue<bool>("Security:Enabled", false);
 var apiKey = builder.Configuration["Security:ApiKey"];
 
-app.Use(async (ctx, next) =>
+// Only add the API-key middleware when security is enabled
+if (securityEnabled)
 {
-    // Allow health without key
-    if (ctx.Request.Path == "/" || ctx.Request.Path.StartsWithSegments("/healthz"))
+    app.Use(async (ctx, next) =>
     {
+        // Allow health without key
+        if (ctx.Request.Path == "/" || ctx.Request.Path.StartsWithSegments("/healthz"))
+        {
+            await next();
+            return;
+        }
+
+        if (!ctx.Request.Headers.TryGetValue("x-api-key", out var key) || key != apiKey)
+        {
+            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await ctx.Response.WriteAsync("Unauthorized");
+            return;
+        }
+
         await next();
-        return;
-    }
-
-    if (!ctx.Request.Headers.TryGetValue("x-api-key", out var key) || key != apiKey)
-    {
-        ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        await ctx.Response.WriteAsync("Unauthorized");
-        return;
-    }
-
-    await next();
-});
+    });
+}
+else
+{
+    Console.WriteLine("Security disabled; requests do not require x-api-key.");
+}
 
 app.Use(async (ctx, next) =>
 {
